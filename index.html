@@ -486,40 +486,47 @@
             console.warn("Supabase init warning", e);
         }
 
-        // Navigation Tabs Handling & Smooth Scroll
+        // Navigation tabs: keep horizontal navigation movement inside the nav,
+        // and calculate vertical scrolling from the actual sticky-nav offset.
         function setActiveTab(tabId, btn) {
-            // Hide all content tabs
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            
-            // Reset all navigation buttons style
+
             document.querySelectorAll('.nav-btn').forEach(b => {
                 b.classList.remove('active', 'bg-brand-blue', 'text-white');
                 b.classList.add('bg-slate-100', 'text-slate-600');
             });
 
-            // Activate target section
             const target = document.getElementById(tabId);
-            if(target) {
+            if (target) {
                 target.classList.add('active');
-                
-                const mainContainer = document.querySelector('main');
-                if (mainContainer) {
-                    const navHeight = document.querySelector('nav')?.offsetHeight || 60;
-                    const topBarHeight = document.querySelector('header')?.offsetHeight || 70;
-                    const elementPosition = target.getBoundingClientRect().top + window.pageYOffset;
-                    const offsetPosition = elementPosition - (navHeight + topBarHeight + 20);
 
-                    window.scrollTo({
-                        top: Math.max(0, offsetPosition),
-                        behavior: 'smooth'
-                    });
-                }
+                const nav = document.querySelector('nav');
+                const stickyTop = nav ? (parseFloat(getComputedStyle(nav).top) || 0) : 0;
+                const navHeight = nav ? nav.offsetHeight : 0;
+                const targetTop = target.getBoundingClientRect().top + window.scrollY;
+                const offsetPosition = Math.max(0, targetTop - stickyTop - navHeight - 12);
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+                });
             }
 
-            // Highlight active button
-            if(btn) {
+            if (btn) {
                 btn.classList.add('active', 'bg-brand-blue', 'text-white');
                 btn.classList.remove('bg-slate-100', 'text-slate-600');
+
+                // Reveal the selected tab within the horizontal navigation only.
+                const nav = btn.closest('nav');
+                if (nav) {
+                    const navRect = nav.getBoundingClientRect();
+                    const buttonRect = btn.getBoundingClientRect();
+                    if (buttonRect.left < navRect.left) {
+                        nav.scrollBy({ left: buttonRect.left - navRect.left, behavior: 'smooth' });
+                    } else if (buttonRect.right > navRect.right) {
+                        nav.scrollBy({ left: buttonRect.right - navRect.right, behavior: 'smooth' });
+                    }
+                }
             }
         }
 
