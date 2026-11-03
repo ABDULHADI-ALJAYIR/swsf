@@ -486,8 +486,8 @@
             console.warn("Supabase init warning", e);
         }
 
-        // Navigation tabs: keep horizontal navigation movement inside the nav,
-        // and calculate vertical scrolling from the actual sticky-nav offset.
+        // Navigation tabs: calculate the final scroll from the real on-screen
+        // sticky header/nav positions after the selected panel has been laid out.
         function setActiveTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
 
@@ -500,15 +500,32 @@
             if (target) {
                 target.classList.add('active');
 
-                const nav = document.querySelector('nav');
-                const stickyTop = nav ? (parseFloat(getComputedStyle(nav).top) || 0) : 0;
-                const navHeight = nav ? nav.offsetHeight : 0;
-                const targetTop = target.getBoundingClientRect().top + window.scrollY;
-                const offsetPosition = Math.max(0, targetTop - stickyTop - navHeight - 12);
+                // Wait for the display/layout change before measuring; this avoids
+                // using stale coordinates while switching between hidden panels.
+                window.requestAnimationFrame(() => {
+                    window.requestAnimationFrame(() => {
+                        const nav = document.querySelector('nav');
+                        const header = document.querySelector('header');
+                        const targetRect = target.getBoundingClientRect();
+                        const navRect = nav ? nav.getBoundingClientRect() : null;
+                        const headerRect = header ? header.getBoundingClientRect() : null;
 
-                window.scrollTo({
-                    top: offsetPosition,
-                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+                        // The target should begin just below whichever sticky bar
+                        // occupies the lowest point on the screen.
+                        const stickyBottom = Math.max(
+                            navRect ? navRect.bottom : 0,
+                            headerRect && getComputedStyle(header).position === 'sticky'
+                                ? headerRect.bottom : 0
+                        );
+                        const desiredTop = window.scrollY + targetRect.top - stickyBottom - 12;
+                        const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+                        const finalTop = Math.min(maxScroll, Math.max(0, desiredTop));
+
+                        window.scrollTo({
+                            top: finalTop,
+                            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+                        });
+                    });
                 });
             }
 
@@ -516,15 +533,16 @@
                 btn.classList.add('active', 'bg-brand-blue', 'text-white');
                 btn.classList.remove('bg-slate-100', 'text-slate-600');
 
-                // Reveal the selected tab within the horizontal navigation only.
+                // Adjust only the navigation strip horizontally; never scroll the page
+                // as a side effect of revealing the last tab on narrow screens.
                 const nav = btn.closest('nav');
                 if (nav) {
                     const navRect = nav.getBoundingClientRect();
                     const buttonRect = btn.getBoundingClientRect();
                     if (buttonRect.left < navRect.left) {
-                        nav.scrollBy({ left: buttonRect.left - navRect.left, behavior: 'smooth' });
+                        nav.scrollBy({ left: buttonRect.left - navRect.left, top: 0, behavior: 'smooth' });
                     } else if (buttonRect.right > navRect.right) {
-                        nav.scrollBy({ left: buttonRect.right - navRect.right, behavior: 'smooth' });
+                        nav.scrollBy({ left: buttonRect.right - navRect.right, top: 0, behavior: 'smooth' });
                     }
                 }
             }
