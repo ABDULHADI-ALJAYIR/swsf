@@ -544,13 +544,55 @@
             return true;
         }
 
+        function getVisitEventIdForThisSession() {
+            const visitKey = 'aljayirpay_total_visit_event_id';
+            const departedKey = 'aljayirpay_total_visit_departed';
+            const navigationEntry = performance.getEntriesByType('navigation')[0];
+            const navigationType = navigationEntry ? navigationEntry.type : 'navigate';
+
+            let storedEventId = null;
+            let wasMarkedDeparted = false;
+            try {
+                storedEventId = sessionStorage.getItem(visitKey);
+                wasMarkedDeparted = sessionStorage.getItem(departedKey) === '1';
+            } catch (error) {
+                throw new Error('Session storage is unavailable; refusing to count refreshes as new visits.');
+            }
+
+            // Reload/Refresh keeps the same event ID. A return after leaving this site
+            // starts a new visit; same-site navigation keeps the current visit ID.
+            const referrerIsSameSite = (() => {
+                if (!document.referrer) return false;
+                try {
+                    return new URL(document.referrer).origin === window.location.origin;
+                } catch (_) {
+                    return false;
+                }
+            })();
+            const returnedAfterLeaving = wasMarkedDeparted &&
+                navigationType !== 'reload' &&
+                (navigationType === 'back_forward' || !referrerIsSameSite);
+
+            if (!storedEventId || returnedAfterLeaving) {
+                storedEventId = makeVisitEventId();
+            }
+
+            try {
+                sessionStorage.setItem(visitKey, storedEventId);
+                sessionStorage.removeItem(departedKey);
+            } catch (error) {
+                throw new Error('Could not persist the visit ID for this browser session.');
+            }
+            return storedEventId;
+        }
+
         function initializeTotalVisitsCounter() {
             if (!supabaseClient) return;
             let eventId;
             try {
-                eventId = makeVisitEventId();
+                eventId = getVisitEventIdForThisSession();
             } catch (error) {
-                console.warn('Secure visit ID generation failed:', error);
+                console.warn('Visit tracking could not safely identify this session:', error);
                 refreshTotalVisits();
                 window.setInterval(refreshTotalVisits, 8000);
                 return;
@@ -565,11 +607,21 @@
                 }
             };
 
-            // A new UUID is created only for this page entry; retries reuse it to avoid duplicate increments.
+            // Reuse the session event ID on refresh and internal navigation; retries are idempotent.
             retryRegistration();
             refreshTotalVisits();
             window.setInterval(refreshTotalVisits, 8000);
         }
+
+        // Mark that this page was left. On reload, the navigation type prevents a new visit;
+        // when the user returns from another site, the next page load can start a new visit.
+        window.addEventListener('pagehide', () => {
+            try {
+                sessionStorage.setItem('aljayirpay_total_visit_departed', '1');
+            } catch (error) {
+                // Keep the page usable if browser storage is restricted.
+            }
+        });
 
         // Financial Calculation Logic
         const TOTAL_REFERENCE_AMOUNT = 12000000000;
