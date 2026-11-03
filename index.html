@@ -229,7 +229,6 @@
             <button onclick="setActiveTab('tab-goods', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">السلع المدعومة</button>
             <button onclick="setActiveTab('tab-medicine', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">تتبع الأدوية</button>
             <button onclick="setActiveTab('tab-penalty', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">الرادع المالي</button>
-            <button onclick="setActiveTab('tab-12billion', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">التفاصيل المالية</button>
         </div>
     </nav>
 
@@ -438,36 +437,7 @@
         <!-- Tab 8: 12 Billion Index Detailed Tab -->
         <section id="tab-12billion" class="tab-content space-y-6">
             <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 border-r-8 border-r-purple-600">
-                <h2 class="text-xl sm:text-2xl font-black text-brand-blue mb-3">تفاصيل وشرح المؤشر</h2>
-                <p class="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">
-                    يعرض هذا المؤشر بالأرقام التفاعلية المباشرة القيمة التقديرية للأموال المستعادة من الهدر والتهريب، ويرتبط تلقائياً إجمالي الزيارات والتفاعل مع المنظومة، حيث تُحسب القيمة بواقع <strong>1,000$ لكل زيارة</strong> تضاف لصالح الثروة المستعادة وتخصم مباشرة من إجمالي الأموال المهدرة.
-                </p>
-                <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-md">
-                    <div class="flex flex-col md:flex-row items-center justify-around gap-6">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center text-xl flame-anim">🔥</div>
-                            <div>
-                                <div id="tabRedWealthDisplay" class="text-2xl sm:text-3xl font-black text-red-400 font-mono">—</div>
-                                <div class="text-xs text-slate-400 font-bold">الأموال المهدرة المتبقية</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-xl">🛡️</div>
-                            <div>
-                                <div id="tabGreenWealthDisplay" class="text-2xl sm:text-3xl font-black text-emerald-400 font-mono">—</div>
-                                <div class="text-xs text-slate-400 font-bold">الأموال العائدة والمستعادة</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-slate-900 text-slate-400 text-center py-6 px-4 text-xs sm:text-sm border-t border-slate-800 space-y-2">
-        <p class="font-extrabold text-emerald-400 text-base sm:text-lg">عبدالهادي الجاير الشتوي</p>
+ اير الشتوي</p>
         <p class="opacity-80">جميع الحقوق محفوظة © نظام الجاير باي لمنع التهريب 2026</p>
     </footer>
 
@@ -748,8 +718,6 @@
 
             const greenEl = document.getElementById('greenWealthDisplay');
             const redEl = document.getElementById('redWealthDisplay');
-            const tabGreenEl = document.getElementById('tabGreenWealthDisplay');
-            const tabRedEl = document.getElementById('tabRedWealthDisplay');
             const redCard = redEl ? redEl.closest('.shadow-lg') : null;
             const greenCard = greenEl ? greenEl.closest('.shadow-lg') : null;
             const redFlame = document.getElementById('redFlameIcon');
@@ -757,9 +725,7 @@
             const shouldAnimate = previousVisits !== null && previousVisits !== totalVisits;
             if (shouldAnimate) {
                 animateCurrency(greenEl, oldGreenVal, greenVal, 650);
-                animateCurrency(tabGreenEl, oldGreenVal, greenVal, 650);
                 animateCurrency(redEl, oldRedVal, redVal, 650);
-                animateCurrency(tabRedEl, oldRedVal, redVal, 650);
                 if (totalVisits > previousVisits) {
                     pulseIndicator(redCard, 'red-money-flash');
                     pulseIndicator(greenCard, 'green-money-flash');
@@ -768,8 +734,6 @@
             } else {
                 if (greenEl) greenEl.innerText = formatCurrency(greenVal);
                 if (redEl) redEl.innerText = formatCurrency(redVal);
-                if (tabGreenEl) tabGreenEl.innerText = formatCurrency(greenVal);
-                if (tabRedEl) tabRedEl.innerText = formatCurrency(redVal);
             }
         }
 
