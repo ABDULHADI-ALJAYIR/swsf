@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALJAYIR PAY - منظومة منع التهريب وحماية المال العام</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts (Cairo) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            green: '#00A651',
+                            blue: '#004080',
+                            dark: '#0F172A',
+                            accent: '#D97706',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        @keyframes pulseDot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .live-dot-active {
+            animation: pulseDot 2s infinite;
+        }
+
+        @keyframes flamePulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.5)); }
+            100% { transform: scale(1.08); filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.8)); }
+        }
+
+        .flame-anim {
+            animation: flamePulse 1.5s infinite alternate;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Top Header & Banner -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50 shadow-md">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-brand-green flex items-center justify-center font-black text-xl text-white shadow-lg">
+                    A
+                </div>
+                <div>
+                    <h1 class="text-lg font-black tracking-wide text-white">ALJAYIR PAY</h1>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 live-dot-active"></span>
+                        <span class="text-xs text-slate-300 font-semibold">مؤشر 12 مليار للوعي المجتمعي</span>
+                        <span class="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-bold border border-emerald-500/30">المستقبل</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Share & Live Stats Widget -->
+            <div class="flex items-center gap-2 sm:gap-4 ml-auto sm:ml-0">
+                <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl px-3 py-1.5 flex items-center gap-3">
+                    <div class="text-right">
+                        <div class="text-[10px] text-slate-400 font-bold">إجمالي الزيارات</div>
+                        <div id="totalVisitsCount" class="text-sm font-black text-emerald-400 font-mono">—</div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <button onclick="toggleShareOptions()" class="bg-brand-blue hover:bg-blue-700 text-white p-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition shadow-md">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                        <span>مشاركة</span>
+                    </button>
+                    <!-- Share Modal -->
+                    <div id="shareBox" class="hidden absolute left-0 top-12 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 p-3 w-48 z-50 space-y-2">
+                        <a id="btnWhatsApp" target="_blank" class="flex items-center gap-2 p-2 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700">💬 واتساب</a>
+                        <a id="btnTelegram" target="_blank" class="flex items-center gap-2 p-2 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700">✈️ تليجرام</a>
+                        <a id="btnFacebook" target="_blank" class="flex items-center gap-2 p-2 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700">📘 فيسبوك</a>
+                        <button onclick="copyLink()" class="w-full text-right p-2 hover:bg-slate-100 rounded-xl text-xs font-bold text-brand-blue border-t border-slate-100">🔗 نسخ الرابط</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="shareToast" class="text-center text-xs text-emerald-400 font-bold pb-1"></div>
+    </header>
+
+    <!-- Global Public Indicator Header (12 Billion Impact) -->
+    <section class="bg-gradient-to-b from-slate-900 to-slate-800 text-white border-b border-slate-800 py-6 px-4">
+        <div class="max-w-6xl mx-auto space-y-4">
+            <div class="text-center max-w-2xl mx-auto space-y-1">
+                <h2 class="text-base sm:text-lg font-extrabold text-emerald-400">مؤشر أثر الوعي المجتمعي لحماية الثروة الوطنية</h2>
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    يعكس هذا العداد التقديري قيمة استرداد المال العام من الهدر والتهريب مع كل زيادة في مستوى الوعي والتفاعل مع المنظومة.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-4xl mx-auto">
+                <!-- Red Box: Wasted Money -->
+                <div class="bg-slate-950/80 p-5 rounded-2xl border border-red-500/30 flex items-center justify-between shadow-lg">
+                    <div>
+                        <div class="text-xs text-slate-400 font-extrabold mb-1">الأموال المهدرة المتبقية</div>
+                        <div id="redWealthDisplay" class="text-xl sm:text-3xl font-black text-red-400 font-mono tracking-tight">$11,839,700,000</div>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-2xl flame-anim">
+                        🔥
+                    </div>
+                </div>
+
+                <!-- Green Box: Recovered Money -->
+                <div class="bg-slate-950/80 p-5 rounded-2xl border border-emerald-500/30 flex items-center justify-between shadow-lg">
+                    <div>
+                        <div class="text-xs text-slate-400 font-extrabold mb-1">الأموال العائدة والمستعادة</div>
+                        <div id="greenWealthDisplay" class="text-xl sm:text-3xl font-black text-emerald-400 font-mono tracking-tight">$160,300,000</div>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-2xl">
+                        🛡️
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-center text-[11px] text-slate-400 font-semibold pt-1">
+                كل زيارة تمثل قيمة تقديرية تعادل 1,000 دولار من أثر الوعي المجتمعي.
+            </p>
+        </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="sticky top-[65px] z-40 bg-white border-b border-slate-200 shadow-sm overflow-x-auto scrollbar-none">
+        <div class="max-w-6xl mx-auto flex items-center gap-1.5 p-2 min-w-max">
+            <button onclick="setActiveTab('tab-vision', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-white bg-brand-blue border border-brand-blue transition active">الرؤية العامة</button>
+            <button onclick="setActiveTab('tab-registration', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">التسجيل والدفع</button>
+            <button onclick="setActiveTab('tab-border', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">مكافحة التهريب</button>
+            <button onclick="setActiveTab('tab-fuel', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">رحلة الوقود</button>
+            <button onclick="setActiveTab('tab-goods', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">السلع المدعومة</button>
+            <button onclick="setActiveTab('tab-medicine', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">تتبع الأدوية</button>
+            <button onclick="setActiveTab('tab-penalty', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">الرادع المالي</button>
+            <button onclick="setActiveTab('tab-12billion', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">مؤشر 12 مليار دولار</button>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="max-w-6xl mx-auto px-4 py-8 flex-1">
+
+        <!-- Tab 1: Vision -->
+        <section id="tab-vision" class="tab-content active space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 border-r-8 border-r-emerald-500">
+                <h2 class="text-xl sm:text-2xl font-black text-brand-blue mb-4">أولاً: الرؤية العامة لـ نظام الجاير باي لمنع التهريب</h2>
+                <p class="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">يأتي <strong>نظام الجاير باي لمنع التهريب (ALJAYIR PAY)</strong> كحل تقني سيادي متكامل لمعالجة التحديات الاقتصادية وتهريب الوقود والسلع المدعومة عبر الحدود، من خلال منظومة رقمية تربط عمليات التوزيع والشراء والدفع والمحاسبة.</p>
+                
+                <div class="bg-slate-100 p-5 rounded-xl border border-slate-200 border-r-4 border-r-brand-blue my-4">
+                    <h3 class="font-extrabold text-brand-blue text-base mb-2">ميزة تشغيلية جوهرية: لا أجهزة ميدانية معقدة وإصدار بطاقات ذكية</h3>
+                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed"><strong>لن نحتاج لتركيب أجهزة إلكترونية أو تتبع (GPS) أو قياسات خزانات معقدة!</strong> يتم إصدار بطاقة رقمية/فعلية مع كل حساب لكل من المواطن والمقيم غير الليبي لتسهيل عمليات التحقق والربط السيادي المباشر بين الهوية والسعر، مع اعتماد مطابقة الكميات المباعة حصرياً عبر المنظومة الرقمية لحساب المتبقي وطلب الشحنات الجديدة بدقة تامة.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 2: Registration -->
+        <section id="tab-registration" class="tab-content space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 border-r-8 border-r-brand-blue">
+                <h2 class="text-xl sm:text-2xl font-black text-brand-blue mb-4">ثانياً: نظام التسجيل، إصدار البطاقات، وطرق الدفع في محطات الوقود</h2>
+                <p class="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">يعتمد <strong>نظام الجاير باي</strong> على منصة تسجيل رقمية متقدمة تضمن ربط كل حساب ببطاقة ذكية، مع توفير خيارات مرنة وآمنة لإتمام عمليات الدفع داخل محطات الوقود بكل سهولة ويسر.</p>
+                
+                <div class="space-y-4">
+                    <div class="border border-slate-200 rounded-xl overflow-hidden">
+                        <button onclick="toggleAccordion(this)" class="w-full bg-slate-50 p-4 text-right font-extrabold text-brand-blue flex justify-between items-center">
+                            <span>1. آلية التسجيل وإصدار البطاقات</span>
+                            <span class="text-xl">+</span>
+                        </button>
+                        <div class="p-4 bg-white border-t border-slate-200 text-xs sm:text-sm text-slate-600 space-y-3">
+                            <p><strong>• المواطن الليبي:</strong> يتم التسجيل في التطبيق عبر إدخال الرقم الوطني وبيانات السجل المدني، ويُصدر لكل حساب مسجل <strong>بطاقة ذكية مدعومة</strong> تمنح حاملها الحق في الحصول على الوقود والسلع بالسعر المدعوم الرسمي.</p>
+                            <p><strong>• المقيم غير الليبي / الزائر:</strong> يتم التسجيل عبر إدخال رقم جواز السفر أو رقم الإقامة المعتمد، ويُصدر للحساب <strong>بطاقة ذكية خاصة بالحساب غير المدعوم</strong> لاحتساب الأسعار وفق القيمة التجارية.</p>
+                            <p><strong>• المرافقة ببطاقة لكل حساب:</strong> كل حساب يتم إنشاؤه وتفعيله في التطبيق (سواء للمواطن أو المقيم) يكون مصحوباً حتماً ببطاقة ذكية رقمية تظهر على التطبيق وبطاقة فعلية للتعامل الميداني.</p>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-200 rounded-xl overflow-hidden">
+                        <button onclick="toggleAccordion(this)" class="w-full bg-slate-50 p-4 text-right font-extrabold text-brand-blue flex justify-between items-center">
+                            <span>2. آليات الدفع داخل محطات الوقود</span>
+                            <span class="text-xl">+</span>
+                        </button>
+                        <div class="p-4 bg-white border-t border-slate-200 text-xs sm:text-sm text-slate-600 space-y-3">
+                            <p>• <strong>قراءة باركود الهاتف:</strong> مسح رمز الاستجابة السريع (QR Code) أو باركود التطبيق المعروض على شاشة هاتف المستخدم عبر أجهزة المحطة.</p>
+                            <p>• <strong>الكود السري (PIN):</strong> إدخال الرقم السري الخاص لتأكيد عملية الخصم والسحب الفوري من الحساب بأمان تام.</p>
+                            <p>• <strong>البطاقة الذكية:</strong> تمرير أو مسح البطاقة الفعلية أو الرقمية للتعرف الفوري على هوية الحساب والفئة السعرية.</p>
+                            <p>• <strong>كود التعبئة من شاشة الهاتف:</strong> إدخال رمز التحقق أو كود التعبئة المؤقت الصادر مباشرة من شاشة تطبيق الهاتف المحمول.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 p-5 rounded-xl border border-amber-200 border-r-4 border-r-amber-500 text-xs sm:text-sm text-amber-900 space-y-2 mt-4">
+                        <p class="font-bold text-amber-800">مثال حي لتجربة المستخدم والدفع في المحطة:</p>
+                        <p>عند توجه سائق المركبة إلى مضخة الوقود في المحطة:</p>
+                        <ul class="list-disc list-inside space-y-1 text-slate-700">
+                            <li>يقوم السائق باختيار وسيلة الدفع أو التحقق في التطبيق: إما <strong>مسح البطاقة</strong>، أو <strong>إدخال الرقم السري (PIN)</strong>، أو <strong>قراءة باركود الهاتف</strong>، أو <strong>استخدام كود التعبئة من شاشة الهاتف</strong>.</li>
+                            <li>يتعرف النظام فوراً على نوع الحساب ويقوم بتسعير الكمية وخصم القيمة بدقة متناهية وبصمة زمنية موثقة.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 3: Border Smuggling -->
+        <section id="tab-border" class="tab-content space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 border-r-8 border-r-amber-500">
+                <h2 class="text-xl sm:text-2xl font-black text-brand-blue mb-4">ثالثاً: الآلية المعتمدة في نظام الجاير باي لمنع التهريب الحدودي</h2>
+                <p class="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">تعتبر المعابر والمناطق الحدودية نقاط استنزاف رئيسية للوقود المدعوم عبر تهريبه للخارج. يضع <strong>نظام الجاير باي لمنع التهريب</strong> حلاً جذرياً وحاسماً لهذه المشكلة من خلال البطاقة الذكية والربط السيادي المباشر بين الهوية والفئة السعرية.</p>
+
+                <div class="bg-amber-50 p-5 rounded-xl border border-amber-200 border-r-4 border-r-amber-500 text-xs sm:text-sm text-amber-900 space-y-3">
+                    <p class="font-bold text-amber-800">مثال حي لمحاربة التهريب الحدودي وتوضيح الفارق السعري عبر النظام:</p>
+                    <p>عند وصول مواطن ليبي ومقيم غير ليبي لتعبئة الوقود باستخدام بطاقتهما في محطة حدودية:</p>
+                    <ul class="list-disc list-inside space-y-2 text-slate-700">
+                        <li><strong>المواطن الليبي (بطاقة الحساب المدعوم):</strong> بمجرد مسح البطاقة أو إدخال الرقم السري (PIN) أو قراءة باركود الهاتف أو كود التعبئة من شاشة الهاتف، يتحقق النظام من هويته مباشرة عبر السجل المدني ليُحسب سعر اللتر له بـ <strong>0.150 دينار</strong>.</li>
+                        <li><strong>المقيم غير الليبي / الزائر (بطاقة الحساب غير المدعوم):</strong> عند التعبئة بنفس الطرق، يتعرف النظام فوراً على فئته لتُجبر المضخة على احتساب سعر اللتر بالسعر التجاري بـ <strong>7.00 دينار</strong> للتر الواحد.</li>
+                    </ul>
+                    <p class="mt-2 text-slate-700 leading-relaxed font-semibold">هذا الإجراء في <strong>نظام الجاير باي لمنع التهريب</strong> يلغي تماماً أي جدوى اقتصادية للتهريب، ويضمن حصول المواطن على حقوقه المدعومة بدقة تامة.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 4: Fuel Journey -->
+        <section id="tab-fuel" class="tab-content space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 border-r-8 border-r-emerald-500">
+                <h2 class="text-xl sm:text-2xl font-black text-brand-blue mb-4">رابعاً: رحلة الوقود، مطابقة مبيعات المنظومة، ونظام التوقيع الإلكتروني</h2>
+                <p class="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">لضمان الرقابة الكاملة ومنع أي تلاعب أو تسريب في كميات الوقود منذ خروجها من المستودعات وحتى محطات الوقود، لا يعتمد النظام على قياسات الخزانات التقليدية، بل يعتمد على <strong>مطابقة الكميات التي تم بيعها حصرياً عبر المنظومة الرقمية</strong> لتحديد الكمية المتبقية في المحطة بدقة تامة وإضافتها عند طلب كميات جديدة.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-slate-800 text-base mb-3">1. مطابقة المبيعات وحساب المتبقي</h3>
+                        <ul class="text-xs sm:text-sm text-slate-600 space-y-2">
+                            <li><strong>• التسجيل الرقمي لكل لتر:</strong> كل عملية بيع تتم في المحطة تسجل لحظياً وفورياً في قاعدة بيانات المنظومة عبر البطاقة الذكية أو التطبيق.</li>
+                            <li><strong>• معرفة المتبقي آلياً:</strong> يحسب النظام الكمية المتبقية في المحطة بطرح إجمالي (المبيعات المؤكدة عبر المنظومة) من (الشحنات السابقة المستلمة).</li>
+                            <li><strong>• طلب الشحنات الجديدة:</strong> بناءً على المتبقي الحقيقي في سجلات المنظومة، يُسمح لصاحب المحطة أو المستودع بطلب الكميات الإضافية عبر النظام بكل شفافة.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-slate-800 text-base mb-3">2. نظام التوقيع الإلكتروني الآمن</h3>
+                        <ul class="text-xs sm:text-sm text-slate-600 space-y-2">
+                            <li><strong>• التوثيق الرقمي:</strong> تتطلب عمليات إرسال الشحنات واستلامها توثيقاً عبر "توقيع إلكتروني مشفر (Digital Signature)".</li>
+                            <li><strong>• أطراف الاعتماد:</strong> يتم التوقيع حصرياً عبر تطبيق النظام بواسطة (مسؤول المستودع الرئيسي + مدير محطة الوقود المستلمة).</li>
+                            <li><strong>• منع التلاعب:</strong> يربط التوقيع الشحنات بالبصمة الزمنية والهوية الرسمية للمسؤولين لمنع أي تمرير وهمي.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 p-5 rounded-xl border border-amber-200 border-r-4 border-r-amber-500 text-xs sm:text-sm text-amber-900 space-y-2">
+                    <p class="font-bold text-amber-800">مثال حي بالأرقام لمطابقة مبيعات المنظومة وطلب الشحنات الجديدة:</p>
+                    <ul class="list-disc list-inside space-y-1.5 text-slate-700">
+                        <li><strong>الشحنة السابقة المستلمة:</strong> استلمت محطة وقود شحنة سابقة قدرها <strong>30,000 لتر</strong> بموجب توقيع إلكتروني موثق.</li>
+                        <li><strong>مبيعات المنظومة المسجلة:</strong> من خلال عمليات البيع اليومية بالبطاقات الذكية والتطبيق، سجلت المنظومة بيع <strong>24,000 لتر</strong> للمواطنين وغير الليبيين.</li>
+                        <li><strong>المتبقي الفعلي في النظام:</strong> يُظهر النظام تلقائياً أن الرصيد المتبقي في المحطة هو <strong>6,000 لتر</strong> (30,000 - 24,000).</li>
+                        <li><strong>طلب الكمية الجديدة:</strong> عندما يطلب صاحب المحطة شحنة جديدة، تعتمد المنظومة الطلب وتضيفه بناءً على استنفاد الرصيد السابق للمبيعات الحقيقية، مع منع أي محاولة لتزوير أو طلب شحنات وهمية دون مبيعات فعلية مسجلة.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 5: Supported Goods -->
+        <section id="tab-goods" class="tab-content space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 border-r-8 border-r-brand-blue">
+                <h2 class="text-xl sm:text-2xl font-black text-brand-blue mb-4">خامساً: مرحلة تنظيم السلع المدعومة وتوضيح الهدر المالي السابق</h2>
+                <p class="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">تمثل السلع الغذائية والتموينية ركيزة أساسية للأمن الغذائي للمواطن. يعتمد <strong>نظام الجاير باي</strong> في هذا القطاع على حوكمة رقمية دقيقة تضمن وصول الدعم لمستحقيه وتمنع أي استنزاف للمال العام عبر الربط المباشر بالباركود الدولي وتحديد الفئات.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-slate-800 text-base mb-3">1. آلية تتبع السلع عبر النظام الرقمي</h3>
+                        <ul class="text-xs sm:text-sm text-slate-600 space-y-2">
+                            <li><strong>• الباركود الدولي الموحد:</strong> تتبع دقيق لكل سلعة (أرز، دقيق، زيت، حليب...) منذ دخولها الموانئ الليبية وحتى وصولها لرفوف الجمعيات الاستهلاكية.</li>
+                            <li><strong>• التحقق من الهوية:</strong> المواطن يشتري حصته بسعر الدعم الرمزي عبر بطاقته الرقمية أو التطبيق المدعوم بالرقم الوطني، وغير الليبي يُحاسب بالسعر التجاري الكامل.</li>
+                            <li><strong>• استثمار الفوائض:</strong> توجيه فوائض أسعار غير المستحقين لدعم مخزون السلع الأساسية ولصندوق الشباب والتنمية.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-slate-800 text-base mb-3">2. كيف كان يحصل الهدر المالي في السابق؟</h3>
+                        <ul class="text-xs sm:text-sm text-slate-600 space-y-2">
+                            <li><strong>• غياب الرقابة وتمرير الحصص الوهمية:</strong> كانت كميات ضخمة من السلع المدعومة تُصرف بطرق ورقية تقليدية دون ربطها بهوية المستهلك أو تتبع مسارها.</li>
+                            <li><strong>• استنزاف الدعم لصالح غير المستحقين:</strong> كانت العمالة الوافدة والزوار والجهات غير المعتمدة تحصل على السلع المدعومة بنفس أسعار المواطن، مما أدى لضياع المليارات.</li>
+                            <li><strong>• التهريب المضاعف:</strong> تسريب السلع المدعومة خارج حدود الدولة والاستفادة من فوارق الأسعار الفلكية على حساب قوت المواطن الليبي.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 p-5 rounded-xl border border-amber-200 border-r-4 border-r-amber-500 text-xs sm:text-sm text-amber-900 space-y-2">
+                    <p class="font-bold text-amber-800">مثال حي بالأرقام يوضح حجم الهدر السابق مقابل المعالجة بـ (الجاير باي):</p>
+                    <ul class="list-disc list-inside space-y-2 text-slate-700">
+                        <li><strong>سيناريو الهدر في السابق (السلع التموينية):</strong> كانت الدولة تدعم سلعة أساسية (مثل كيس الدقيق أو زيت الطعام) لمليون أسرة ليبية، ولكن بسبب غياب النظام الرقمي، كان يتم تسريب وتوزيع ما نسبته <strong>40%</strong> من إجمالي الكميات إلى شبكات غير مستحقة أو تهريبها للخارج. هذا يعني هدر ما قيمته <strong>عدة مليارات دينار سنوياً</strong> من الخزينة العامة دون أن يستفيد المواطن الحقيقي منها.</li>
+                        <li><strong>المعالجة الحاسمة بـ (نظام الجاير باي):</strong> بفضل الربط الرقمي المباشر عبر الهوية الرقمية والبطاقة الذكية، أصبحت كل سلعة مسجلة بباركود دولي لا يُصرف بسعر الدعم إلا للمواطن المسجل في السجل المدني. أما غير الليبي فيدفع قيمتها التجارية الحقيقية. وبذلك تم إيقاف الهدر بنسبة <strong>100%</strong> وتحويل الفوائض المالية مباشرة لدعم الاقتصاد الوطني وتطوير مخزون السلع الاستراتيجية.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 6: Medicine Tracking -->
+        <section id="tab-medicine" class="tab-content space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 border-r-8 border-r-sky-600">
+                <h2 class="text-xl sm:text-2xl font-black text-brand-blue mb-4">سادساً: تتبع الأدوية من المخازن إلى المستشفيات والمستوصفات ومنع الهدر</h2>
+                <p class="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">لأن الدواء هو ركيزة أساسية لصحة المواطن، يعتمد <strong>نظام الجاير باي</strong> آلية ذكية وشاملة لتتبع حركة الأدوية والمستلزمات الطبية منذ لحظة خروجها من المخازن المركزية وحتى وصولها الفعلي للمريض، لضمان عدم تسريبها أو هدرها.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-slate-800 text-base mb-3">1. الاستلام والتسجيل بالمؤسسات الصحية</h3>
+                        <ul class="text-xs sm:text-sm text-slate-600 space-y-2">
+                            <li><strong>• التوثيق الرقمي للشحنات:</strong> عند توزيع الأدوية على المستشفيات والمراكز الصحية، يتم تسجيل تفاصيل العملية بدقة عبر المنظومة (اسم المؤسسة الصحية، اسم الدواء، رقم التشغيلة، الكمية المسلمة، وتاريخ التسليم).</li>
+                            <li><strong>• التوقيع الإلكتروني للطرفين:</strong> توثيق التسليم والاستلام رسمياً عبر التوقيع الإلكتروني المعتمد لجهة الإرسال وجهة الاستلام لضمان المسؤولية الكاملة.</li>
+                            <li><strong>• منع الضياع:</strong> تصبح كل علبة دواء مرتبطة برقم تسلسلي ومؤسسة محددة يمكن تتبعها إلكترونياً في أي وقت.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-slate-800 text-base mb-3">2. متابعة الصرف داخل المستشفيات</h3>
+                        <ul class="text-xs sm:text-sm text-slate-600 space-y-2">
+                            <li><strong>• متابعة دقيقة للرصيد:</strong> إذا استلم المستشفى مثلاً 10,000 وحدة من دواء معين، تتابع المنظومة الكميات المنتقلة لصيدلية الأقسام، وما صُرف للمرضى، والكميات المتبقية.</li>
+                            <li><strong>• حماية سرية المريض:</strong> يتم توثيق عمليات الصرف للمستفيدين وفق المعايير الطبية المعتمدة وبما يضمن حماية سرية بيانات المرضى بالكامل.</li>
+                            <li><strong>• إدارة التالف والتحويلات:</strong> تسجيل أي كميات محولة لمؤسسات أخرى أو تم إتلافها مع توثيق الأسباب الفنية والقانونية بدقة.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 p-5 rounded-xl border border-amber-200 border-r-4 border-r-amber-500 text-xs sm:text-sm text-amber-900 space-y-2">
+                    <p class="font-bold text-amber-800">نظام منع الهدر وانتهاء صلاحية الأدوية:</p>
+                    <p>تتضمن المنظومة رادعاً تقنياً ذكياً لمراقبة تواريخ الصلاحية لجميع الأدوية في المخازن المركزية والمؤسسات الصحية:</p>
+                    <ul class="list-disc list-inside space-y-1.5 text-slate-700">
+                        <li><strong>التنبيهات التلقائية المسبقة:</strong> عند اقتراب انتهاء صلاحية أي صنف دوائي، يرسل النظام إنذارات تلقائية فورية للجهات المسؤولة موضحاً اسم الدواء، كميته، موقعه، والمدة المتبقية.</li>
+                        <li><strong>إيقاف الهدر المالي:</strong> يتيح هذا النظام إعادة توزيع الأدوية قبل انتهاء صلاحيتها على المستشفيات التي تحتاجها فعلياً، مما يمنع هدر ملايين الدنانير على الأدوية منتهية الصلاحية.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 7: Financial Penalty -->
+        <section id="tab-penalty" class="tab-content space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 border-r-8 border-r-amber-600">
+                <h2 class="text-xl sm:text-2xl font-black text-brand-blue mb-4">سابعاً: آلية الرادع المالي – استرداد قيمة الدعم ضمن النظام</h2>
+                <p class="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">في حال أثبتت المطابقة الإلكترونية لمبيعات المنظومة أو السجلات الطبية وجود تلاعب أو عجز في الكميات غير المبررة، يتم اتخاذ إجراء مالي وفق الضوابط القانونية المعتمدة.</p>
+                <p class="font-bold text-slate-800 mb-2">ويتمثل الإجراء في:</p>
+                <ul class="list-disc list-inside space-y-2 text-xs sm:text-sm text-slate-700 mb-4 bg-slate-50 p-5 rounded-xl border border-slate-200">
+                    <li><strong>تحديد الجهة المسؤولة</strong> عن المخالفة من خلال سجلات المنظومة الإلكترونية.</li>
+                    <li><strong>تحديد كمية الوقود أو السلع أو الأدوية</strong> محل التلاعب بدقة عبر مقارنة المنصرف بالواردات والمبيعات.</li>
+                    <li><strong>احتساب قيمتها</strong> وفق السعر التجاري غير المدعوم المعتمد.</li>
+                    <li><strong>إلزام الجهة المسؤولة</strong> بسداد قيمة المواد بالسعر غير المدعوم، مع تسوية ما سبق دفعه.</li>
+                    <li><strong>تطبيق العقوبات القانونية</strong> المقررة، والتي قد تصل إلى سحب الترخيص بحسب طبيعة المخالفة.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Tab 8: 12 Billion Index Detailed Tab -->
+        <section id="tab-12billion" class="tab-content space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 border-r-8 border-r-purple-600">
+                <h2 class="text-xl sm:text-2xl font-black text-brand-blue mb-3">تفاصيل وشرح مؤشر 12 مليار دولار للوعي المجتمعي</h2>
+                <p class="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">
+                    يعرض هذا المؤشر بالأرقام التفاعلية المباشرة القيمة التقديرية للأموال المستعادة من الهدر والتهريب، ويرتبط تلقائياً إجمالي الزيارات والتفاعل مع المنظومة، حيث تُحسب القيمة بواقع <strong>1,000$ لكل زيارة</strong> تضاف لصالح الثروة المستعادة وتخصم مباشرة من إجمالي الأموال المهدرة.
+                </p>
+                <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-md">
+                    <div class="flex flex-col md:flex-row items-center justify-around gap-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center text-xl flame-anim">🔥</div>
+                            <div>
+                                <div id="tabRedWealthDisplay" class="text-2xl sm:text-3xl font-black text-red-400 font-mono">$11,839,700,000</div>
+                                <div class="text-xs text-slate-400 font-bold">الأموال المهدرة المتبقية</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-xl">🛡️</div>
+                            <div>
+                                <div id="tabGreenWealthDisplay" class="text-2xl sm:text-3xl font-black text-emerald-400 font-mono">$160,300,000</div>
+                                <div class="text-xs text-slate-400 font-bold">الأموال العائدة والمستعادة</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 text-center py-6 px-4 text-xs sm:text-sm border-t border-slate-800 space-y-2">
+        <p class="font-extrabold text-emerald-400 text-base sm:text-lg">عبدالهادي الجاير الشتوي</p>
+        <p class="opacity-80">جميع الحقوق محفوظة © نظام الجاير باي لمنع التهريب 2026</p>
+    </footer>
+
+    <!-- Logic & Scripts -->
+    <script>
+        // Supabase Client Setup
+        const SUPABASE_URL = 'https://kuxxvzuzzxvcvbcsfpym.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_1nSBavtn3H3NyW-PHV8tJg_WzoH0mOU';
+        
+        let supabaseClient = null;
+        try {
+            if (window.supabase) {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch(e) {
+            console.warn("Supabase init warning", e);
+        }
+
+        // Navigation Tabs Handling & Smooth Scroll
+        function setActiveTab(tabId, btn) {
+            // Hide all content tabs
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            // Reset all navigation buttons style
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('active', 'bg-brand-blue', 'text-white');
+                b.classList.add('bg-slate-100', 'text-slate-600');
+            });
+
+            // Activate target section
+            const target = document.getElementById(tabId);
+            if(target) {
+                target.classList.add('active');
+                
+                const mainContainer = document.querySelector('main');
+                if (mainContainer) {
+                    const navHeight = document.querySelector('nav')?.offsetHeight || 60;
+                    const topBarHeight = document.querySelector('header')?.offsetHeight || 70;
+                    const elementPosition = target.getBoundingClientRect().top + window.pageYOffset;
+                    const offsetPosition = elementPosition - (navHeight + topBarHeight + 20);
+
+                    window.scrollTo({
+                        top: Math.max(0, offsetPosition),
+                        behavior: 'smooth'
+                    });
+                }
+            }
+
+            // Highlight active button
+            if(btn) {
+                btn.classList.add('active', 'bg-brand-blue', 'text-white');
+                btn.classList.remove('bg-slate-100', 'text-slate-600');
+            }
+        }
+
+        // Accordion Toggle
+        function toggleAccordion(btn) {
+            const body = btn.nextElementSibling;
+            if (body.style.display === "block") {
+                body.style.display = "none";
+                btn.querySelector('span:last-child').innerText = "+";
+            } else {
+                body.style.display = "block";
+                btn.querySelector('span:last-child').innerText = "-";
+            }
+        }
+
+        // Share Toggle
+        function toggleShareOptions() {
+            const box = document.getElementById('shareBox');
+            box.classList.toggle('hidden');
+        }
+
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                const toast = document.getElementById('shareToast');
+                toast.innerText = 'تم نسخ الرابط بنجاح!';
+                setTimeout(() => toast.innerText = '', 3000);
+            });
+        }
+
+        // Persistent total-visits counter (one registration per page entry; polling never registers visits).
+        function makeVisitEventId() {
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                return window.crypto.randomUUID();
+            }
+            if (!window.crypto || typeof window.crypto.getRandomValues !== 'function') {
+                throw new Error('Secure random UUID generation is unavailable.');
+            }
+            const bytes = new Uint8Array(16);
+            window.crypto.getRandomValues(bytes);
+            bytes[6] = (bytes[6] & 0x0f) | 0x40;
+            bytes[8] = (bytes[8] & 0x3f) | 0x80;
+            const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+            return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+        }
+
+        function setTotalVisitsDisplay(value) {
+            const visitsEl = document.getElementById('totalVisitsCount');
+            const count = Number(value);
+            if (visitsEl && Number.isSafeInteger(count) && count >= 0) {
+                visitsEl.innerText = count.toLocaleString('en-US');
+            }
+        }
+
+        async function refreshTotalVisits() {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient.rpc('get_site_visit_count');
+            if (error) {
+                console.warn('Could not refresh total visits from Supabase:', error.message);
+                return;
+            }
+            setTotalVisitsDisplay(data);
+        }
+
+        async function registerThisPageVisit(eventId) {
+            if (!supabaseClient) return false;
+            const { data, error } = await supabaseClient.rpc('register_site_visit', {
+                p_event_id: eventId
+            });
+            if (error) {
+                console.warn('Visit registration will retry with the same event ID:', error.message);
+                return false;
+            }
+            setTotalVisitsDisplay(data);
+            return true;
+        }
+
+        function initializeTotalVisitsCounter() {
+            if (!supabaseClient) return;
+            let eventId;
+            try {
+                eventId = makeVisitEventId();
+            } catch (error) {
+                console.warn('Secure visit ID generation failed:', error);
+                refreshTotalVisits();
+                window.setInterval(refreshTotalVisits, 8000);
+                return;
+            }
+
+            let registrationFinished = false;
+            const retryRegistration = async () => {
+                if (registrationFinished) return;
+                registrationFinished = await registerThisPageVisit(eventId);
+                if (!registrationFinished) {
+                    window.setTimeout(retryRegistration, 3000);
+                }
+            };
+
+            // A new UUID is created only for this page entry; retries reuse it to avoid duplicate increments.
+            retryRegistration();
+            refreshTotalVisits();
+            window.setInterval(refreshTotalVisits, 8000);
+        }
+
+        // Financial Calculation Logic
+        const TOTAL_REFERENCE_AMOUNT = 12000000000;
+        const VALUE_PER_VISIT = 1000;
+        let currentVisits = 160300;
+
+        function formatCurrency(val) {
+            return '$' + Math.round(val).toLocaleString('en-US');
+        }
+
+        function updateMetrics() {
+            const greenVal = currentVisits * VALUE_PER_VISIT;
+            const redVal = Math.max(0, TOTAL_REFERENCE_AMOUNT - greenVal);
+
+            const greenEl = document.getElementById('greenWealthDisplay');
+            const redEl = document.getElementById('redWealthDisplay');
+            const tabGreenEl = document.getElementById('tabGreenWealthDisplay');
+            const tabRedEl = document.getElementById('tabRedWealthDisplay');
+            const visitsEl = document.getElementById('totalVisitsCount');
+
+            if(greenEl) greenEl.innerText = formatCurrency(greenVal);
+            if(redEl) redEl.innerText = formatCurrency(redVal);
+            if(tabGreenEl) tabGreenEl.innerText = formatCurrency(greenVal);
+            if(tabRedEl) tabRedEl.innerText = formatCurrency(redVal);
+        }
+
+        // Setup share URLs and initial calculation
+        window.addEventListener('DOMContentLoaded', () => {
+            const url = encodeURIComponent(window.location.href);
+            const title = encodeURIComponent(document.title);
+
+            const btnWA = document.getElementById('btnWhatsApp');
+            const btnTG = document.getElementById('btnTelegram');
+            const btnFB = document.getElementById('btnFacebook');
+
+            if(btnWA) btnWA.href = `https://api.whatsapp.com/send?text=${title}%20${url}`;
+            if(btnTG) btnTG.href = `https://t.me/share/url?url=${url}&text=${title}`;
+            if(btnFB) btnFB.href = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+
+            updateMetrics();
+            initializeTotalVisitsCounter();
+        });
+    </script>
+</body>
+</html>
