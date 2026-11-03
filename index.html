@@ -142,7 +142,7 @@
                 <div class="bg-slate-950/80 p-5 rounded-2xl border border-red-500/30 flex items-center justify-between shadow-lg">
                     <div>
                         <div class="text-xs text-slate-400 font-extrabold mb-1">الأموال المهدرة المتبقية</div>
-                        <div id="redWealthDisplay" class="text-xl sm:text-3xl font-black text-red-400 font-mono tracking-tight">$11,839,700,000</div>
+                        <div id="redWealthDisplay" class="text-xl sm:text-3xl font-black text-red-400 font-mono tracking-tight">—</div>
                     </div>
                     <div class="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-2xl flame-anim">
                         🔥
@@ -153,7 +153,7 @@
                 <div class="bg-slate-950/80 p-5 rounded-2xl border border-emerald-500/30 flex items-center justify-between shadow-lg">
                     <div>
                         <div class="text-xs text-slate-400 font-extrabold mb-1">الأموال العائدة والمستعادة</div>
-                        <div id="greenWealthDisplay" class="text-xl sm:text-3xl font-black text-emerald-400 font-mono tracking-tight">$160,300,000</div>
+                        <div id="greenWealthDisplay" class="text-xl sm:text-3xl font-black text-emerald-400 font-mono tracking-tight">—</div>
                     </div>
                     <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-2xl">
                         🛡️
@@ -518,6 +518,7 @@
             const count = Number(value);
             if (visitsEl && Number.isSafeInteger(count) && count >= 0) {
                 visitsEl.innerText = count.toLocaleString('en-US');
+                updateMetrics(count);
             }
         }
 
@@ -623,17 +624,17 @@
             }
         });
 
-        // Financial Calculation Logic
+        // Financial indicators use the actual total-visits count returned by Supabase.
         const TOTAL_REFERENCE_AMOUNT = 12000000000;
         const VALUE_PER_VISIT = 1000;
-        let currentVisits = 160300;
 
         function formatCurrency(val) {
             return '$' + Math.round(val).toLocaleString('en-US');
         }
 
-        function updateMetrics() {
-            const greenVal = currentVisits * VALUE_PER_VISIT;
+        function updateMetrics(totalVisits) {
+            if (!Number.isSafeInteger(totalVisits) || totalVisits < 0) return;
+            const greenVal = totalVisits * VALUE_PER_VISIT;
             const redVal = Math.max(0, TOTAL_REFERENCE_AMOUNT - greenVal);
 
             const greenEl = document.getElementById('greenWealthDisplay');
@@ -661,7 +662,6 @@
             if(btnTG) btnTG.href = `https://t.me/share/url?url=${url}&text=${title}`;
             if(btnFB) btnFB.href = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
 
-            updateMetrics();
             initializeTotalVisitsCounter();
         });
     </script>
