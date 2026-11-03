@@ -66,6 +66,27 @@
             animation: flamePulse 1.5s infinite alternate;
         }
 
+        @keyframes redDeductionFlash {
+            0% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
+            35% { box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.18); }
+            100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
+        }
+        @keyframes greenAdditionFlash {
+            0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+            35% { box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.18); }
+            100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+        }
+        @keyframes flameImpact {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.45)); }
+            45% { transform: scale(1.12); filter: drop-shadow(0 0 9px rgba(248, 113, 113, 0.8)); }
+        }
+        .red-money-flash { animation: redDeductionFlash 700ms ease-out; }
+        .green-money-flash { animation: greenAdditionFlash 700ms ease-out; }
+        .flame-impact { animation: flameImpact 700ms ease-out; }
+        @media (prefers-reduced-motion: reduce) {
+            .red-money-flash, .green-money-flash, .flame-impact { animation: none; }
+        }
+
         .tab-content {
             display: none;
         }
@@ -78,6 +99,61 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive layout: fix intrinsic sizing at its source instead of hiding overflow. */
+        html, body { width: 100%; min-width: 0; max-width: 100%; }
+        body { margin-inline: 0; }
+        header, nav, main, footer, section, article, aside,
+        .tab-content, .tab-content > div { min-width: 0; max-width: 100%; }
+        main, header > div, section > div, footer { width: 100%; }
+        .flex > *, .grid > *, .inline-flex > * { min-width: 0; }
+        p, h1, h2, h3, h4, li, strong, span, a, button {
+            overflow-wrap: anywhere;
+            word-break: normal;
+        }
+        img, video, canvas, iframe, svg { max-width: 100%; }
+        input, select, textarea { width: 100%; max-width: 100%; min-width: 0; }
+        button, a { touch-action: manipulation; }
+        button { min-height: 2.5rem; }
+        #shareBox { width: min(12rem, calc(100vw - 2rem)); max-width: calc(100vw - 2rem); }
+        /* Keep navigation scrollable on its own so every tab remains accessible. */
+        nav { width: 100%; max-width: 100vw; }
+        nav > div { width: max-content; min-width: 100%; }
+        @media (max-width: 480px) {
+            header > div { padding-inline: 0.75rem; gap: 0.5rem; }
+            main { padding-inline: 0.75rem; }
+            #shareBox { left: 0; right: auto; }
+            .tab-content .p-6 { padding: 1rem; }
+            .tab-content .grid { grid-template-columns: minmax(0, 1fr); }
+            .tab-content button { max-width: 100%; white-space: normal; }
+        }
+        @media (min-width: 481px) and (max-width: 767px) {
+            main { padding-inline: 1rem; }
+        }
+
+        /* Mobile viewport safety: prevent intrinsic-width children from expanding the page. */
+        *, *::before, *::after { box-sizing: border-box; }
+        body { overflow-wrap: anywhere; }
+        header, header > div, nav, nav > div, main, main > section,
+        main > section > div, footer, .tab-content, .tab-content > * {
+            min-width: 0;
+            max-inline-size: 100%;
+        }
+        main > section { inline-size: 100%; }
+        .tab-content .flex, .tab-content .grid {
+            min-width: 0;
+            max-width: 100%;
+        }
+        @media (max-width: 480px) {
+            header > div { flex-wrap: wrap; }
+            main { padding-inline: 0.75rem; }
+            main > section { padding-inline: 0.75rem; }
+            .tab-content h1, .tab-content h2, .tab-content h3 {
+                max-width: 100%;
+                overflow-wrap: anywhere;
+            }
+            .tab-content [class*="text-"] { min-width: 0; }
         }
     </style>
 </head>
@@ -94,7 +170,7 @@
                     <h1 class="text-lg font-black tracking-wide text-white">ALJAYIR PAY</h1>
                     <div class="flex items-center gap-2">
                         <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 live-dot-active"></span>
-                        <span class="text-xs text-slate-300 font-semibold">مؤشر 12 مليار للوعي المجتمعي</span>
+                        <span class="text-xs text-slate-300 font-semibold">الوعي المجتمعي</span>
                         <span class="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-bold border border-emerald-500/30">المستقبل</span>
                     </div>
                 </div>
@@ -139,23 +215,23 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-4xl mx-auto">
                 <!-- Red Box: Wasted Money -->
-                <div class="bg-slate-950/80 p-5 rounded-2xl border border-red-500/30 flex items-center justify-between shadow-lg">
+                <div class="bg-slate-950/80 p-3 sm:p-4 rounded-2xl border border-red-500/30 flex items-center justify-between shadow-lg">
                     <div>
                         <div class="text-xs text-slate-400 font-extrabold mb-1">الأموال المهدرة المتبقية</div>
-                        <div id="redWealthDisplay" class="text-xl sm:text-3xl font-black text-red-400 font-mono tracking-tight">$11,839,700,000</div>
+                        <div id="redWealthDisplay" class="text-lg sm:text-2xl font-black text-red-400 font-mono tracking-tight">—</div>
                     </div>
-                    <div class="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-2xl flame-anim">
+                    <div id="redFlameIcon" class="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-xl flame-anim">
                         🔥
                     </div>
                 </div>
 
                 <!-- Green Box: Recovered Money -->
-                <div class="bg-slate-950/80 p-5 rounded-2xl border border-emerald-500/30 flex items-center justify-between shadow-lg">
+                <div class="bg-slate-950/80 p-3 sm:p-4 rounded-2xl border border-emerald-500/30 flex items-center justify-between shadow-lg">
                     <div>
                         <div class="text-xs text-slate-400 font-extrabold mb-1">الأموال العائدة والمستعادة</div>
-                        <div id="greenWealthDisplay" class="text-xl sm:text-3xl font-black text-emerald-400 font-mono tracking-tight">$160,300,000</div>
+                        <div id="greenWealthDisplay" class="text-lg sm:text-2xl font-black text-emerald-400 font-mono tracking-tight">—</div>
                     </div>
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-2xl">
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xl">
                         🛡️
                     </div>
                 </div>
@@ -177,7 +253,6 @@
             <button onclick="setActiveTab('tab-goods', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">السلع المدعومة</button>
             <button onclick="setActiveTab('tab-medicine', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">تتبع الأدوية</button>
             <button onclick="setActiveTab('tab-penalty', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">الرادع المالي</button>
-            <button onclick="setActiveTab('tab-12billion', this)" class="nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition">مؤشر 12 مليار دولار</button>
         </div>
     </nav>
 
@@ -383,34 +458,6 @@
             </div>
         </section>
 
-        <!-- Tab 8: 12 Billion Index Detailed Tab -->
-        <section id="tab-12billion" class="tab-content space-y-6">
-            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 border-r-8 border-r-purple-600">
-                <h2 class="text-xl sm:text-2xl font-black text-brand-blue mb-3">تفاصيل وشرح مؤشر 12 مليار دولار للوعي المجتمعي</h2>
-                <p class="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">
-                    يعرض هذا المؤشر بالأرقام التفاعلية المباشرة القيمة التقديرية للأموال المستعادة من الهدر والتهريب، ويرتبط تلقائياً إجمالي الزيارات والتفاعل مع المنظومة، حيث تُحسب القيمة بواقع <strong>1,000$ لكل زيارة</strong> تضاف لصالح الثروة المستعادة وتخصم مباشرة من إجمالي الأموال المهدرة.
-                </p>
-                <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-md">
-                    <div class="flex flex-col md:flex-row items-center justify-around gap-6">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center text-xl flame-anim">🔥</div>
-                            <div>
-                                <div id="tabRedWealthDisplay" class="text-2xl sm:text-3xl font-black text-red-400 font-mono">$11,839,700,000</div>
-                                <div class="text-xs text-slate-400 font-bold">الأموال المهدرة المتبقية</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-xl">🛡️</div>
-                            <div>
-                                <div id="tabGreenWealthDisplay" class="text-2xl sm:text-3xl font-black text-emerald-400 font-mono">$160,300,000</div>
-                                <div class="text-xs text-slate-400 font-bold">الأموال العائدة والمستعادة</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
     </main>
 
     <!-- Footer -->
@@ -517,7 +564,10 @@
             const visitsEl = document.getElementById('totalVisitsCount');
             const count = Number(value);
             if (visitsEl && Number.isSafeInteger(count) && count >= 0) {
+                const previousCountText = visitsEl.innerText.replace(/,/g, '');
+                const previousCount = /^\d+$/.test(previousCountText) ? Number(previousCountText) : null;
                 visitsEl.innerText = count.toLocaleString('en-US');
+                updateMetrics(count, previousCount);
             }
         }
 
@@ -623,29 +673,68 @@
             }
         });
 
-        // Financial Calculation Logic
+        // Financial indicators use the actual total-visits count returned by Supabase.
         const TOTAL_REFERENCE_AMOUNT = 12000000000;
         const VALUE_PER_VISIT = 1000;
-        let currentVisits = 160300;
 
         function formatCurrency(val) {
             return '$' + Math.round(val).toLocaleString('en-US');
         }
 
-        function updateMetrics() {
-            const greenVal = currentVisits * VALUE_PER_VISIT;
+        function animateCurrency(element, fromValue, toValue, duration) {
+            if (!element) return;
+            if (fromValue === null || !Number.isFinite(fromValue) || fromValue === toValue ||
+                window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                element.innerText = formatCurrency(toValue);
+                return;
+            }
+
+            const startTime = performance.now();
+            const difference = toValue - fromValue;
+            const tick = (now) => {
+                const progress = Math.min(1, (now - startTime) / duration);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                element.innerText = formatCurrency(fromValue + difference * eased);
+                if (progress < 1) window.requestAnimationFrame(tick);
+                else element.innerText = formatCurrency(toValue);
+            };
+            window.requestAnimationFrame(tick);
+        }
+
+        function pulseIndicator(element, className) {
+            if (!element) return;
+            element.classList.remove(className);
+            void element.offsetWidth;
+            element.classList.add(className);
+            window.setTimeout(() => element.classList.remove(className), 750);
+        }
+
+        function updateMetrics(totalVisits, previousVisits = null) {
+            if (!Number.isSafeInteger(totalVisits) || totalVisits < 0) return;
+            const greenVal = totalVisits * VALUE_PER_VISIT;
             const redVal = Math.max(0, TOTAL_REFERENCE_AMOUNT - greenVal);
+            const oldGreenVal = previousVisits === null ? null : previousVisits * VALUE_PER_VISIT;
+            const oldRedVal = previousVisits === null ? null : Math.max(0, TOTAL_REFERENCE_AMOUNT - oldGreenVal);
 
             const greenEl = document.getElementById('greenWealthDisplay');
             const redEl = document.getElementById('redWealthDisplay');
-            const tabGreenEl = document.getElementById('tabGreenWealthDisplay');
-            const tabRedEl = document.getElementById('tabRedWealthDisplay');
-            const visitsEl = document.getElementById('totalVisitsCount');
+            const redCard = redEl ? redEl.closest('.shadow-lg') : null;
+            const greenCard = greenEl ? greenEl.closest('.shadow-lg') : null;
+            const redFlame = document.getElementById('redFlameIcon');
 
-            if(greenEl) greenEl.innerText = formatCurrency(greenVal);
-            if(redEl) redEl.innerText = formatCurrency(redVal);
-            if(tabGreenEl) tabGreenEl.innerText = formatCurrency(greenVal);
-            if(tabRedEl) tabRedEl.innerText = formatCurrency(redVal);
+            const shouldAnimate = previousVisits !== null && previousVisits !== totalVisits;
+            if (shouldAnimate) {
+                animateCurrency(greenEl, oldGreenVal, greenVal, 650);
+                animateCurrency(redEl, oldRedVal, redVal, 650);
+                if (totalVisits > previousVisits) {
+                    pulseIndicator(redCard, 'red-money-flash');
+                    pulseIndicator(greenCard, 'green-money-flash');
+                    pulseIndicator(redFlame, 'flame-impact');
+                }
+            } else {
+                if (greenEl) greenEl.innerText = formatCurrency(greenVal);
+                if (redEl) redEl.innerText = formatCurrency(redVal);
+            }
         }
 
         // Setup share URLs and initial calculation
@@ -661,7 +750,6 @@
             if(btnTG) btnTG.href = `https://t.me/share/url?url=${url}&text=${title}`;
             if(btnFB) btnFB.href = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
 
-            updateMetrics();
             initializeTotalVisitsCounter();
         });
     </script>
