@@ -104,8 +104,8 @@
             <div class="flex items-center gap-2 sm:gap-4 ml-auto sm:ml-0">
                 <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl px-3 py-1.5 flex items-center gap-3">
                     <div class="text-right">
-                        <div class="text-[10px] text-slate-400 font-bold">إجمالي الزوار المتفاعلين</div>
-                        <div id="totalVisitsCount" class="text-sm font-black text-emerald-400 font-mono">64,120</div>
+                        <div class="text-[10px] text-slate-400 font-bold">إجمالي الزيارات</div>
+                        <div id="totalVisitsCount" class="text-sm font-black text-emerald-400 font-mono">—</div>
                     </div>
                 </div>
 
@@ -422,8 +422,8 @@
     <!-- Logic & Scripts -->
     <script>
         // Supabase Client Setup
-        const SUPABASE_URL = 'https://fgjppyucvxiqmmpyijfb.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnanBweXVjdnhpcW1tcHlpamZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM1NTk5MDAsImV4cCI6MjEwOTEzNTkwMH0.cMXEhd-Tu1JCS_KPRfnoLLJzMXETXJeRLQs4F8gvD_g';
+        const SUPABASE_URL = 'https://kuxxvzuzzxvcvbcsfpym.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_1nSBavtn3H3NyW-PHV8tJg_WzoH0mOU';
         
         let supabaseClient = null;
         try {
@@ -497,6 +497,80 @@
             });
         }
 
+        // Persistent total-visits counter (one registration per page entry; polling never registers visits).
+        function makeVisitEventId() {
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                return window.crypto.randomUUID();
+            }
+            if (!window.crypto || typeof window.crypto.getRandomValues !== 'function') {
+                throw new Error('Secure random UUID generation is unavailable.');
+            }
+            const bytes = new Uint8Array(16);
+            window.crypto.getRandomValues(bytes);
+            bytes[6] = (bytes[6] & 0x0f) | 0x40;
+            bytes[8] = (bytes[8] & 0x3f) | 0x80;
+            const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+            return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+        }
+
+        function setTotalVisitsDisplay(value) {
+            const visitsEl = document.getElementById('totalVisitsCount');
+            const count = Number(value);
+            if (visitsEl && Number.isSafeInteger(count) && count >= 0) {
+                visitsEl.innerText = count.toLocaleString('en-US');
+            }
+        }
+
+        async function refreshTotalVisits() {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient.rpc('get_site_visit_count');
+            if (error) {
+                console.warn('Could not refresh total visits from Supabase:', error.message);
+                return;
+            }
+            setTotalVisitsDisplay(data);
+        }
+
+        async function registerThisPageVisit(eventId) {
+            if (!supabaseClient) return false;
+            const { data, error } = await supabaseClient.rpc('register_site_visit', {
+                p_event_id: eventId
+            });
+            if (error) {
+                console.warn('Visit registration will retry with the same event ID:', error.message);
+                return false;
+            }
+            setTotalVisitsDisplay(data);
+            return true;
+        }
+
+        function initializeTotalVisitsCounter() {
+            if (!supabaseClient) return;
+            let eventId;
+            try {
+                eventId = makeVisitEventId();
+            } catch (error) {
+                console.warn('Secure visit ID generation failed:', error);
+                refreshTotalVisits();
+                window.setInterval(refreshTotalVisits, 8000);
+                return;
+            }
+
+            let registrationFinished = false;
+            const retryRegistration = async () => {
+                if (registrationFinished) return;
+                registrationFinished = await registerThisPageVisit(eventId);
+                if (!registrationFinished) {
+                    window.setTimeout(retryRegistration, 3000);
+                }
+            };
+
+            // A new UUID is created only for this page entry; retries reuse it to avoid duplicate increments.
+            retryRegistration();
+            refreshTotalVisits();
+            window.setInterval(refreshTotalVisits, 8000);
+        }
+
         // Financial Calculation Logic
         const TOTAL_REFERENCE_AMOUNT = 12000000000;
         const VALUE_PER_VISIT = 1000;
@@ -520,7 +594,6 @@
             if(redEl) redEl.innerText = formatCurrency(redVal);
             if(tabGreenEl) tabGreenEl.innerText = formatCurrency(greenVal);
             if(tabRedEl) tabRedEl.innerText = formatCurrency(redVal);
-            if(visitsEl) visitsEl.innerText = currentVisits.toLocaleString('en-US');
         }
 
         // Setup share URLs and initial calculation
@@ -537,6 +610,7 @@
             if(btnFB) btnFB.href = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
 
             updateMetrics();
+            initializeTotalVisitsCounter();
         });
     </script>
 </body>
