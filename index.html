@@ -66,6 +66,27 @@
             animation: flamePulse 1.5s infinite alternate;
         }
 
+        @keyframes redDeductionFlash {
+            0% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
+            35% { box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.18); }
+            100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
+        }
+        @keyframes greenAdditionFlash {
+            0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+            35% { box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.18); }
+            100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+        }
+        @keyframes flameImpact {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.45)); }
+            45% { transform: scale(1.12); filter: drop-shadow(0 0 9px rgba(248, 113, 113, 0.8)); }
+        }
+        .red-money-flash { animation: redDeductionFlash 700ms ease-out; }
+        .green-money-flash { animation: greenAdditionFlash 700ms ease-out; }
+        .flame-impact { animation: flameImpact 700ms ease-out; }
+        @media (prefers-reduced-motion: reduce) {
+            .red-money-flash, .green-money-flash, .flame-impact { animation: none; }
+        }
+
         .tab-content {
             display: none;
         }
@@ -517,8 +538,10 @@
             const visitsEl = document.getElementById('totalVisitsCount');
             const count = Number(value);
             if (visitsEl && Number.isSafeInteger(count) && count >= 0) {
+                const previousCountText = visitsEl.innerText.replace(/,/g, '');
+                const previousCount = /^\d+$/.test(previousCountText) ? Number(previousCountText) : null;
                 visitsEl.innerText = count.toLocaleString('en-US');
-                updateMetrics(count);
+                updateMetrics(count, previousCount);
             }
         }
 
@@ -632,21 +655,66 @@
             return '$' + Math.round(val).toLocaleString('en-US');
         }
 
-        function updateMetrics(totalVisits) {
+        function animateCurrency(element, fromValue, toValue, duration) {
+            if (!element) return;
+            if (fromValue === null || !Number.isFinite(fromValue) || fromValue === toValue ||
+                window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                element.innerText = formatCurrency(toValue);
+                return;
+            }
+
+            const startTime = performance.now();
+            const difference = toValue - fromValue;
+            const tick = (now) => {
+                const progress = Math.min(1, (now - startTime) / duration);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                element.innerText = formatCurrency(fromValue + difference * eased);
+                if (progress < 1) window.requestAnimationFrame(tick);
+                else element.innerText = formatCurrency(toValue);
+            };
+            window.requestAnimationFrame(tick);
+        }
+
+        function pulseIndicator(element, className) {
+            if (!element) return;
+            element.classList.remove(className);
+            void element.offsetWidth;
+            element.classList.add(className);
+            window.setTimeout(() => element.classList.remove(className), 750);
+        }
+
+        function updateMetrics(totalVisits, previousVisits = null) {
             if (!Number.isSafeInteger(totalVisits) || totalVisits < 0) return;
             const greenVal = totalVisits * VALUE_PER_VISIT;
             const redVal = Math.max(0, TOTAL_REFERENCE_AMOUNT - greenVal);
+            const oldGreenVal = previousVisits === null ? null : previousVisits * VALUE_PER_VISIT;
+            const oldRedVal = previousVisits === null ? null : Math.max(0, TOTAL_REFERENCE_AMOUNT - oldGreenVal);
 
             const greenEl = document.getElementById('greenWealthDisplay');
             const redEl = document.getElementById('redWealthDisplay');
             const tabGreenEl = document.getElementById('tabGreenWealthDisplay');
             const tabRedEl = document.getElementById('tabRedWealthDisplay');
-            const visitsEl = document.getElementById('totalVisitsCount');
+            const redCard = redEl ? redEl.closest('.bg-slate-950\\/80') : null;
+            const greenCard = greenEl ? greenEl.closest('.bg-slate-950\\/80') : null;
+            const redFlame = document.getElementById('redFlameIcon');
 
-            if(greenEl) greenEl.innerText = formatCurrency(greenVal);
-            if(redEl) redEl.innerText = formatCurrency(redVal);
-            if(tabGreenEl) tabGreenEl.innerText = formatCurrency(greenVal);
-            if(tabRedEl) tabRedEl.innerText = formatCurrency(redVal);
+            const shouldAnimate = previousVisits !== null && previousVisits !== totalVisits;
+            if (shouldAnimate) {
+                animateCurrency(greenEl, oldGreenVal, greenVal, 650);
+                animateCurrency(tabGreenEl, oldGreenVal, greenVal, 650);
+                animateCurrency(redEl, oldRedVal, redVal, 650);
+                animateCurrency(tabRedEl, oldRedVal, redVal, 650);
+                if (totalVisits > previousVisits) {
+                    pulseIndicator(redCard, 'red-money-flash');
+                    pulseIndicator(greenCard, 'green-money-flash');
+                    pulseIndicator(redFlame, 'flame-impact');
+                }
+            } else {
+                if (greenEl) greenEl.innerText = formatCurrency(greenVal);
+                if (redEl) redEl.innerText = formatCurrency(redVal);
+                if (tabGreenEl) tabGreenEl.innerText = formatCurrency(greenVal);
+                if (tabRedEl) tabRedEl.innerText = formatCurrency(redVal);
+            }
         }
 
         // Setup share URLs and initial calculation
