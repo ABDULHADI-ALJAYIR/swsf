@@ -67,9 +67,15 @@
             background: #34d399;
             animation: visitorLivePulse 1.35s ease-in-out infinite;
         }
-        .visitor-live-dot:nth-child(2) { animation-delay: 675ms; }
+        @keyframes totalVisitsNumberGlow {
+            0%, 100% { opacity: 0.88; text-shadow: 0 0 0 rgba(52, 211, 153, 0); }
+            50% { opacity: 1; text-shadow: 0 0 7px rgba(52, 211, 153, 0.28); }
+        }
+        .total-visits-number {
+            animation: totalVisitsNumberGlow 2.4s ease-in-out infinite;
+        }
         @media (prefers-reduced-motion: reduce) {
-            .visitor-live-dot { animation: none; opacity: 1; transform: none; }
+            .visitor-live-dot, .total-visits-number { animation: none; opacity: 1; transform: none; text-shadow: none; }
         }
 
         .live-dot-active {
@@ -175,13 +181,12 @@
             <div class="flex items-center gap-2 sm:gap-4 ml-auto sm:ml-0">
                 <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl px-4 py-2 flex flex-col items-center justify-center gap-1 text-center min-w-0 max-w-full">
                     <div class="flex items-center justify-center gap-2 flex-wrap">
-                        <span class="text-sm sm:text-base text-slate-300 font-bold leading-tight">إجمالي الزوار المتفاعلين</span>
-                        <span class="inline-flex items-center gap-1.5" aria-hidden="true">
-                            <span class="visitor-live-dot"></span>
+                        <span class="text-sm sm:text-base text-slate-300 font-bold leading-tight">إجمالي الزيارات</span>
+                        <span class="inline-flex items-center" aria-hidden="true">
                             <span class="visitor-live-dot"></span>
                         </span>
                     </div>
-                    <div id="totalVisitsCount" class="text-lg sm:text-xl font-black text-emerald-400 font-mono leading-tight">—</div>
+                    <div id="totalVisitsCount" class="total-visits-number text-lg sm:text-xl font-black text-emerald-400 font-mono leading-tight">—</div>
                 </div>
 
                 <a href="https://www.facebook.com/share/1EUZT2niXs/" target="_blank" rel="noopener noreferrer" aria-label="صفحة ALJAYIR PAY على فيسبوك" title="تابعنا على فيسبوك" class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#1877F2] hover:bg-[#166FE5] text-white shadow-md transition">
