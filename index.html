@@ -547,7 +547,7 @@
         }
 
         function copyLink() {
-            navigator.clipboard.writeText(window.location.href).then(() => {
+            navigator.clipboard.writeText('https://swsf.vercel.app').then(() => {
                 const toast = document.getElementById('shareToast');
                 toast.innerText = 'تم نسخ الرابط بنجاح!';
                 setTimeout(() => toast.innerText = '', 3000);
@@ -749,7 +749,7 @@
 
         // Setup share URLs and initial calculation
         window.addEventListener('DOMContentLoaded', () => {
-            const url = encodeURIComponent(window.location.href);
+            const url = encodeURIComponent('https://swsf.vercel.app');
             const title = encodeURIComponent(document.title);
 
             const btnWA = document.getElementById('btnWhatsApp');
