@@ -93,6 +93,16 @@
         .total-visits-number {
             animation: totalVisitsNumberGlow 2.4s ease-in-out infinite;
         }
+        @keyframes totalVisitsArrowGlow {
+            0%, 100% { text-shadow: 0 0 1px rgba(52, 211, 153, 0.12), 0 0 2px rgba(52, 211, 153, 0.08); }
+            50% { text-shadow: 0 0 4px rgba(52, 211, 153, 0.55), 0 0 8px rgba(52, 211, 153, 0.28); }
+        }
+        .total-visits-arrow {
+            animation: totalVisitsArrowGlow 2s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .total-visits-arrow { animation: none; text-shadow: none; }
+        }
         @media (prefers-reduced-motion: reduce) {
             .visitor-live-dot, .total-visits-number { animation: none; opacity: 1; transform: none; text-shadow: none; }
         }
@@ -207,7 +217,7 @@
                     </div>
                     <div class="inline-flex items-center justify-center gap-1.5" dir="ltr">
                         <div id="totalVisitsCount" class="total-visits-number text-lg sm:text-xl font-black text-emerald-400 font-mono leading-tight">—</div>
-                        <span class="text-emerald-400 text-base sm:text-lg font-black leading-none" aria-hidden="true">↑</span>
+                        <span class="total-visits-arrow text-emerald-400 text-base sm:text-lg font-black leading-none" aria-hidden="true">↑</span>
                     </div>
                 </div>
 
